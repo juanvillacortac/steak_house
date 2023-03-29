@@ -7,7 +7,7 @@
     "distDir": "../build"
   },
   "package": {
-    "productName": "kit",
+    "productName": "steakhouse",
     "version": "0.1.0"
   },
   "tauri": {
