@@ -1,7 +1,10 @@
 package main
 
-import "steak_house/go/server"
+import (
+	"steak_house/go/server"
+	_ "steak_house/migrations"
+)
 
 func main() {
-	server.StartServer()
+	server.StartServer(true, true)
 }

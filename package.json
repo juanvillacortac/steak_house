@@ -4,6 +4,8 @@
 	"private": true,
 	"scripts": {
 		"dev": "vite dev",
+		"dev:app": "tauri dev",
+		"dev:go": "go run steak_house/go/cmd/cli serve",
 		"build": "vite build",
 		"build:go": "go build steak_house/go/cmd/server",
 		"bundle": "node ./bundle.js",

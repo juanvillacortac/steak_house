@@ -11,35 +11,46 @@ import (
 	//
 	// "google.golang.org/grpc"
 	"log"
+	"strings"
 
+	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase"
+	"github.com/pocketbase/pocketbase/apis"
+	"github.com/pocketbase/pocketbase/core"
+	"github.com/pocketbase/pocketbase/plugins/migratecmd"
 )
 
-func StartServer() {
+func disableAdminMiddleware() echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			if strings.HasPrefix(c.Path(), "/_") {
+				return apis.NewForbiddenError("You are not allowed to access this resource", nil)
+			}
+			return next(c)
+		}
+	}
+}
+
+func StartServer(autoStart bool, disableAdmin bool) {
 	app := pocketbase.New()
-	app.RootCmd.SetArgs([]string{"serve"})
+
+	if disableAdmin {
+		app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
+			e.Router.Use(disableAdminMiddleware())
+
+			return nil
+		})
+	}
+
+	migratecmd.MustRegister(app, app.RootCmd, &migratecmd.Options{
+		Automigrate: true, // auto creates migration files when making collection changes
+	})
+
+	if autoStart {
+		app.RootCmd.SetArgs([]string{"serve"})
+	}
 
 	if err := app.Start(); err != nil {
 		log.Fatal(err)
 	}
-
-	// db.InitDb()
-	//
-	// lis, err := net.Listen("tcp", ":3333")
-	// if err != nil {
-	// 	log.Fatalf("failed to listen: %v", err)
-	// }
-	//
-	// jwtManager := jwt.NewJWTManager("secret", 15*time.Minute)
-	// interceptor := service.NewAuthInterceptor(jwtManager, service.AccessibleRoles())
-	//
-	// server := grpc.NewServer(
-	// 	grpc.UnaryInterceptor(interceptor.Unary()),
-	// 	grpc.StreamInterceptor(interceptor.Stream()),
-	// )
-	// service.RegisterAuthService(server, jwtManager)
-	// log.Printf("server listening at %v", lis.Addr())
-	// if err := server.Serve(lis); err != nil {
-	// 	log.Fatalf("failed to serve: %v", err)
-	// }
 }

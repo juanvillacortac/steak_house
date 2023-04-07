@@ -13,15 +13,12 @@
   import { fade, fly } from "svelte/transition";
 
   let notFound = false;
-  let toEdit: any = {};
   let formData = writable<FormData | undefined>();
   let imgData: string | undefined;
 
   function calcQuantity() {
     let q = 0;
-    for (const i of ((ingredients as Record[]) || []).sort(
-      (a, b) => b.weight - a.weight
-    )) {
+    for (const i of (ingredients || []).sort((a, b) => b.weight - a.weight)) {
       if (
         i.weight <=
         i.expand.ingredient.weight * i.expand.ingredient.quantity
@@ -36,16 +33,22 @@
     return Math.trunc(q);
   }
 
+  let name = "";
+  let description = "";
+
+  $: console.log(description);
+
   $: save = async () => {
-    if (!toEdit) return;
+    if (!name || !ingredients?.length) return;
     let data;
     if ($formData) {
-      $formData.append("name", toEdit.name);
-      $formData.append("description", toEdit.name);
+      $formData.append("name", name);
+      $formData.append("description", description);
       data = await pb.collection("dishes").create($formData);
     } else {
       data = await pb.collection("dishes").create({
-        ...toEdit,
+        name,
+        description,
         ingredients: ingredients.map((i) => i.id),
       });
     }
@@ -81,7 +84,9 @@
     }
   }
 
-  let ingredients: Record[] = [];
+  let ingredients: (Exclude<Record, "expand"> & {
+    expand: Record;
+  })[] = [];
   let selected: string | undefined;
   let quantity = 1;
   function cancelCrud() {
@@ -169,7 +174,7 @@
 {#if !imgData}
   <div class="flex w-full items-center relative p-4 justify-between">
     <div class="w-50">
-      <TextBox placeholder="Nombre del platillo" bind:value={toEdit.name} />
+      <TextBox placeholder="Nombre del platillo" bind:value={name} />
     </div>
     <div class="flex space-x-4">
       <IconButton on:click={save}>
@@ -210,29 +215,27 @@
     <div
       class="absolute h-full bg-gradient-to-t from-dark-300 to-transparent flex w-full"
     />
-    {#if toEdit}
-      <div class="absolute flex w-full justify-end top-0 p-4">
-        <IconButton
-          on:click={() => {
-            document.getElementById("image")?.click();
-          }}
+    <div class="absolute flex w-full justify-end top-0 p-4">
+      <IconButton
+        on:click={() => {
+          document.getElementById("image")?.click();
+        }}
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="1em"
+          height="1em"
+          viewBox="0 0 16 16"
+          ><path
+            fill="currentColor"
+            d="M11.498 5.501a1.002 1.002 0 1 1-2.003 0a1.002 1.002 0 0 1 2.003 0ZM2 4.5A2.5 2.5 0 0 1 4.5 2h6.998a2.5 2.5 0 0 1 2.5 2.5v1.558a2.574 2.574 0 0 0-1-.023V4.5a1.5 1.5 0 0 0-1.5-1.5H4.5A1.5 1.5 0 0 0 3 4.5v6.998c0 .232.052.451.146.647l3.651-3.651a1.7 1.7 0 0 1 2.404 0l.34.34l-.706.707l-.341-.34a.7.7 0 0 0-.99 0l-3.651 3.65c.196.094.415.147.647.147h1.796l-.25 1H4.5a2.5 2.5 0 0 1-2.5-2.5V4.5Zm11.263 2.507a1.562 1.562 0 0 0-.927.447L8.05 11.742a2.777 2.777 0 0 0-.722 1.256l-.009.033l-.303 1.211a.61.61 0 0 0 .74.74l1.21-.303a2.776 2.776 0 0 0 1.29-.73l4.288-4.288a1.56 1.56 0 0 0-1.28-2.654Z"
+          /></svg
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="1em"
-            height="1em"
-            viewBox="0 0 16 16"
-            ><path
-              fill="currentColor"
-              d="M11.498 5.501a1.002 1.002 0 1 1-2.003 0a1.002 1.002 0 0 1 2.003 0ZM2 4.5A2.5 2.5 0 0 1 4.5 2h6.998a2.5 2.5 0 0 1 2.5 2.5v1.558a2.574 2.574 0 0 0-1-.023V4.5a1.5 1.5 0 0 0-1.5-1.5H4.5A1.5 1.5 0 0 0 3 4.5v6.998c0 .232.052.451.146.647l3.651-3.651a1.7 1.7 0 0 1 2.404 0l.34.34l-.706.707l-.341-.34a.7.7 0 0 0-.99 0l-3.651 3.65c.196.094.415.147.647.147h1.796l-.25 1H4.5a2.5 2.5 0 0 1-2.5-2.5V4.5Zm11.263 2.507a1.562 1.562 0 0 0-.927.447L8.05 11.742a2.777 2.777 0 0 0-.722 1.256l-.009.033l-.303 1.211a.61.61 0 0 0 .74.74l1.21-.303a2.776 2.776 0 0 0 1.29-.73l4.288-4.288a1.56 1.56 0 0 0-1.28-2.654Z"
-            /></svg
-          >
-        </IconButton>
-      </div>
-    {/if}
+      </IconButton>
+    </div>
     <div class="flex w-full items-center relative px-4 pb-4 justify-between">
       <div class="w-50">
-        <TextBox placeholder="Nombre del platillo" bind:value={toEdit.name} />
+        <TextBox placeholder="Nombre del platillo" bind:value={name} />
       </div>
       <div class="flex space-x-4">
         <IconButton on:click={save}>
@@ -260,20 +263,18 @@
       <div
         class="flex flex-col space-y-2 border rounded-lg p-2 border-dark-50 shadow-lg bg-dark-400"
       >
-        <Editor value={toEdit.description} />
+        <Editor bind:value={description} />
       </div>
     </div>
   </div>
   <div class="flex flex-col space-y-2 !cursor-normal text-block w-1/2">
     <div class="flex w-full justify-between items-center">
       <h2 class="text-xl font-bold pointer-events-none">Ingredientes</h2>
-      {#if toEdit}
-        <IconButton
-          on:click={() => {
-            selected = "";
-          }}><AddFilled /></IconButton
-        >
-      {/if}
+      <IconButton
+        on:click={() => {
+          selected = "";
+        }}><AddFilled /></IconButton
+      >
     </div>
     <div class="flex-col flex space-y-4">
       {#each ingredients as i}

@@ -41,7 +41,7 @@
         q = posibles;
       }
     }
-    return q;
+    return q == Infinity ? 0 : q;
   }
 
   $: save = async () => {
@@ -193,7 +193,7 @@
   }}
 />
 
-{#if notFound}
+{#if notFound || record?.disabled}
   <div
     class="flex w-full flex-grow flex-col items-center justify-center space-y-4"
   >
@@ -429,7 +429,7 @@
           <div
             class="flex flex-col space-y-2 border rounded-lg p-2 border-dark-50 shadow-lg bg-dark-400"
           >
-            <Editor value={record.description} />
+            <Editor bind:value={toEdit.description} />
           </div>
         </div>
       {:else if record.description}
@@ -476,6 +476,10 @@
               {i.expand.ingredient.name} - {i.weight}{i.expand.ingredient
                 .weight_type}
             </li>
+          {:else}
+            <div class="flex flex-col pointer-events-none select-none">
+              <p>Sin ingredientes</p>
+            </div>
           {/each}
         </ul>
       {/if}

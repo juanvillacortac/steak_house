@@ -201,7 +201,7 @@
             { name: "Gramos", value: "gr" },
             { name: "Mililitros", value: "l" },
           ]}
-          value={toEdit.weight_type}
+          bind:value={toEdit.weight_type}
         />
       </div>
       <div class="flex flex-col space-y-2">
@@ -390,8 +390,10 @@
               <th scope="col" class="py-3 px-6 text-right"> Total </th>
               <th scope="col" class="py-3 px-6"> Conservación </th>
               <th scope="col" class="py-3 px-6"> Vencimiento </th>
-              <th scope="col" class="py-3 px-6"> Agregado el </th>
-              <th scope="col" class="py-3 px-6"> Actualizado el </th>
+              {#if !selectable}
+                <th scope="col" class="py-3 px-6"> Agregado el </th>
+                <th scope="col" class="py-3 px-6"> Actualizado el </th>
+              {/if}
               <th scope="col" class="text-right py-3 px-6"> Acciones </th>
             </tr>
           </thead>
@@ -409,7 +411,7 @@
                   <div class="flex w-6ch">
                     <!-- svelte-ignore a11y-click-events-have-key-events -->
                     <button
-                      class="rounded cursor-pointer font-normal bg-gray-100 text-xs p-1 transform whitespace-nowrap overflow-ellipsis overflow-hidden dark:bg-dark-100 hover:overflow-visible "
+                      class="rounded cursor-pointer font-normal bg-gray-100 text-xs p-1 transform whitespace-nowrap overflow-ellipsis overflow-hidden dark:bg-dark-100 hover:overflow-visible"
                       title="Copiar al portapapeles"
                       on:click={() => navigator.clipboard.writeText(c.id)}
                       use:tooltip
@@ -475,20 +477,22 @@
                     </p>
                   </div>
                 </td>
-                <td>
-                  <div class="flex py-4 px-6">
-                    <p class="font-bold text-xs">
-                      {new Date(c.created).toLocaleString()}
-                    </p>
-                  </div>
-                </td>
-                <td>
-                  <div class="flex py-4 px-6">
-                    <p class="font-bold text-xs">
-                      {new Date(c.updated).toLocaleString()}
-                    </p>
-                  </div>
-                </td>
+                {#if !selectable}
+                  <td>
+                    <div class="flex py-4 px-6">
+                      <p class="font-bold text-xs">
+                        {new Date(c.created).toLocaleString()}
+                      </p>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="flex py-4 px-6">
+                      <p class="font-bold text-xs">
+                        {new Date(c.updated).toLocaleString()}
+                      </p>
+                    </div>
+                  </td>
+                {/if}
                 <td class="text-right py-4 px-6">
                   <div class="flex space-x-1 items-center justify-center">
                     {#if selectable}
