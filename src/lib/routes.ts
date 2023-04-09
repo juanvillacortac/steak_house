@@ -1,7 +1,11 @@
+import { ChartBar } from "carbon-icons-svelte";
+import type { SvelteComponent } from "svelte";
+
 export type RouteMap = {
   name: string;
   path?: string;
-  icon?: string;
+  segment?: string;
+  icon?: string | (new (args: { target: any; props?: any }) => SvelteComponent);
   roles?: string[];
 };
 
@@ -10,6 +14,7 @@ export const routesMap: RouteMap[] = [
   {
     name: "Menú",
     path: "/",
+    segment: "/menu",
     icon: `<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 16 16"><path fill="currentColor" d="M4 1.5a.5.5 0 0 0-1 0v3a2.5 2.5 0 0 0 2 2.45v7.55a.5.5 0 0 0 1 0V6.95A2.5 2.5 0 0 0 8 4.5v-3a.5.5 0 0 0-1 0v3a1.5 1.5 0 0 1-1 1.415V1.5a.5.5 0 0 0-1 0v4.415A1.5 1.5 0 0 1 4 4.5v-3Zm7 13V8H9.5a.5.5 0 0 1-.5-.5v-4c0-.663.326-1.283.771-1.729C10.217 1.326 10.837 1 11.5 1a.5.5 0 0 1 .5.5v13a.5.5 0 0 1-1 0Z"></path></svg>`,
   },
   {
@@ -29,6 +34,12 @@ export const routesMap: RouteMap[] = [
     path: "/inventory",
     icon: `<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path fill="currentColor" d="M11 21H5q-.825 0-1.413-.588T3 19V5q0-.825.588-1.413T5 3h4.175q.275-.875 1.075-1.438T12 1q1 0 1.788.563T14.85 3H19q.825 0 1.413.588T21 5v5h-2V5h-2v3H7V5H5v14h6v2Zm4.5-1.075l-4.25-4.25l1.4-1.4l2.85 2.85l5.65-5.65l1.4 1.4l-7.05 7.05ZM12 5q.425 0 .713-.288T13 4q0-.425-.288-.713T12 3q-.425 0-.713.288T11 4q0 .425.288.713T12 5Z"></path></svg>`,
     roles: ["chef", "admin", "cocinero"],
+  },
+  {
+    name: "Reportes",
+    path: "/reports",
+    icon: ChartBar,
+    roles: ["chef", "admin"],
   },
 ];
 

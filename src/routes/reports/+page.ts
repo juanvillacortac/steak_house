@@ -5,6 +5,5 @@ export const load = (({}) => {
     header: {
       hideBack: true,
     },
-    segment: "/menu",
   };
 }) satisfies PageLoad;

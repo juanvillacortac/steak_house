@@ -3,10 +3,16 @@
   import Ingredients from "$lib/components/Ingredients.svelte";
   import Editor from "$lib/editor/Editor.svelte";
   import { pb } from "$lib/pocketbase";
-  import { Add, AddFilled, Close, TrashCan } from "carbon-icons-svelte";
+  import {
+    Add,
+    AddFilled,
+    ChatBot,
+    Close,
+    TrashCan,
+  } from "carbon-icons-svelte";
   import { IconButton, NumberBox, ProgressRing, TextBox } from "fluent-svelte";
   import type { Record } from "pocketbase";
-  import { onMount } from "svelte";
+  import { onMount, tick } from "svelte";
   import { portal } from "svelte-portal";
   import { expoOut } from "svelte/easing";
   import { writable } from "svelte/store";
@@ -45,6 +51,9 @@
       $formData.append("name", name);
       $formData.append("description", description);
       data = await pb.collection("dishes").create($formData);
+      await pb.collection("dishes").update(data.id, {
+        ingredients: ingredients.map((i) => i.id),
+      });
     } else {
       data = await pb.collection("dishes").create({
         name,
@@ -54,6 +63,45 @@
     }
     goto("/menu/" + data.id);
   };
+
+  let instanceEditor: Function;
+
+  async function ia() {
+    if (!ingredients.length) return;
+    let ings = ingredients.map((i) => `${i.expand.ingredient.name}`).join(", ");
+    const txt = `Necesito que me digas un platillo que pueda hacer usando los siguientes ingredientes: ${ings}. No quiero que me des la receta. Sólo me dirás una descripción y el nombre, pero me responderás en formato json, así: "{
+title: 'Huevo frito',
+description: 'Los huevos fritos blah blah blah...'
+}", obviamente sin incluir las comillas que estoy usando para envolver el json, y sin decir nada fuera de dicho json, porque usaré tu respuesta para ser procesada automáticamente via API con un JSON.stringify de javascript, así que si dices algo más tendré un error. Si no es posible realizar un platillo con esos ingredientes, no me responderás con un json sino que me hablarás de forma normal explicandome porqué no es posible realizar un platillo`;
+    const res = await fetch(
+      "https://api.writesonic.com/v2/business/content/chatsonic?engine=premium&language=es",
+      {
+        method: "POST",
+        headers: {
+          accept: "application/json; charset=utf-8",
+          "content-type": "application/json; charset=utf-8",
+          "X-API-KEY": "7450993b-1ded-4350-8c54-c7840d3f2e5c",
+        },
+        body: JSON.stringify({
+          enable_google_results: false,
+          enable_memory: false, //true,
+          input_text: txt,
+        }),
+      }
+    );
+    const response = await res.json();
+    try {
+      const receta = JSON.parse(response.message);
+      name = receta.title;
+      description = receta.description;
+      await tick();
+      console.log(receta);
+      instanceEditor?.();
+    } catch {
+      description = response.message;
+    }
+    instanceEditor?.();
+  }
 
   let inputRef: HTMLInputElement;
   function submitImage<
@@ -95,10 +143,11 @@
   }
   async function add() {
     if (!selected?.trim()) return;
+    const ing = await pb.collection("ingredients").getOne(selected);
     const added = await pb
       .collection("dishes_ingredients")
       .create(
-        { ingredient: selected, weight: quantity },
+        { ingredient: selected, weight: quantity * ing.weight },
         { expand: "ingredient" }
       );
     ingredients = [...ingredients, added];
@@ -258,12 +307,15 @@
   class="flex overflow-auto flex-grow h-0 rounded-lg p-4 mt-4 select-none space-x-4"
 >
   <div class="flex flex-col space-y-2 !cursor-normal text-block w-1/2">
-    <h2 class="text-xl font-bold pointer-events-none">Descripción</h2>
+    <div class="flex w-full justify-between items-center">
+      <h2 class="text-xl font-bold pointer-events-none">Descripción</h2>
+      <IconButton on:click={ia}><ChatBot /></IconButton>
+    </div>
     <div class="pt-1.1">
       <div
         class="flex flex-col space-y-2 border rounded-lg p-2 border-dark-50 shadow-lg bg-dark-400"
       >
-        <Editor bind:value={description} />
+        <Editor bind:value={description} bind:instanceEditor />
       </div>
     </div>
   </div>

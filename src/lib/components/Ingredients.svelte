@@ -199,7 +199,7 @@
         <ComboBox
           items={[
             { name: "Gramos", value: "gr" },
-            { name: "Mililitros", value: "l" },
+            { name: "Mililitros", value: "ml" },
           ]}
           bind:value={toEdit.weight_type}
         />

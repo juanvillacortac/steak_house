@@ -1,7 +1,6 @@
 import { pb } from "$lib/pocketbase";
-import type { PageLoad } from "./$types";
 
-export const load = (async ({ }) => {
+export async function load() {
   const users = await pb.collection("users").getList(1, 1);
   if (users.totalItems < 1) {
     await pb.collection("users").create({
@@ -20,4 +19,4 @@ export const load = (async ({ }) => {
     },
     hideNav: true,
   };
-}) satisfies PageLoad;
+}

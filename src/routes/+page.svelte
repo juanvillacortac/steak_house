@@ -23,12 +23,16 @@
   let searchFlyoutOpen = false;
 
   $: searchItems = (data || []).map((e) => e.name);
-  $: filtered = (data || []).filter((e) =>
-    e.name
-      .replaceAll(" ", "")
-      .toLowerCase()
-      .includes(searchValue.replaceAll(" ", "").toLowerCase())
-  );
+  $: filtered = (data || [])
+    .filter((e) =>
+      e.name
+        .replaceAll(" ", "")
+        .toLowerCase()
+        .includes(searchValue.replaceAll(" ", "").toLowerCase())
+    )
+    .filter((e) =>
+      pb.authStore.model?.role == "sala" && e.disabled ? false : true
+    );
 
   function handleSelection(index: number) {
     searchValue = searchItems[index];
@@ -103,6 +107,8 @@
           class="rounded-lg flex-col w-full aspect-square items-center justify-center hover:bg-[var(--fds-card-background-default)] flex duration-200 hover:shadow-xl cursor-pointer p-2 space-y-4"
           in:fly={{ y: 5 }}
           href="/menu/{e.id}"
+          class:opacity-50={e.disabled}
+          class:!bg-red-900={e.disabled}
         >
           {#if e.image}
             <div class="flex rounded-lg overflow-hidden">

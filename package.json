@@ -5,9 +5,9 @@
 	"scripts": {
 		"dev": "vite dev",
 		"dev:app": "tauri dev",
-		"dev:go": "go run steak_house/go/cmd/cli serve",
+		"dev:go": "go run steak_house/go/cmd/cli serve --http 127.0.0.1:9080",
 		"build": "vite build",
-		"build:go": "go build steak_house/go/cmd/server",
+		"build:go": "go build steak_house/go/cmd/serve",
 		"bundle": "node ./bundle.js",
 		"preview": "vite preview",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
@@ -22,10 +22,11 @@
 		"fluent-svelte": "^1.6.0",
 		"postcss": "^8.4.21",
 		"svelte": "^3.54.0",
-		"svelte-check": "^3.0.1",
+		"svelte-check": "^3.2.0",
 		"tailwindcss": "^3.2.7",
 		"tslib": "^2.4.1",
 		"typescript": "^5.0.0",
+		"typescript-svelte-plugin": "^0.3.22",
 		"vite": "^4.2.0",
 		"vite-plugin-windicss": "^1.8.10",
 		"windicss": "^3.5.6"
@@ -33,6 +34,7 @@
 	"type": "module",
 	"dependencies": {
 		"@sveltejs/adapter-static": "^2.0.1",
+		"@sveltejs/pancake": "^0.0.18",
 		"@tauri-apps/api": "^1.2.0",
 		"@tiptap/core": "2.0.0-beta.220",
 		"@tiptap/extension-link": "2.0.0-beta.220",

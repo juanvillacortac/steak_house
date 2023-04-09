@@ -3,8 +3,21 @@
   import Ingredients from "$lib/components/Ingredients.svelte";
   import Editor from "$lib/editor/Editor.svelte";
   import { pb } from "$lib/pocketbase";
-  import { Add, AddFilled, Close, TrashCan } from "carbon-icons-svelte";
-  import { IconButton, NumberBox, ProgressRing, TextBox } from "fluent-svelte";
+  import {
+    Add,
+    AddFilled,
+    Checkmark,
+    Close,
+    TrashCan,
+    Reset,
+  } from "carbon-icons-svelte";
+  import {
+    Button,
+    IconButton,
+    NumberBox,
+    ProgressRing,
+    TextBox,
+  } from "fluent-svelte";
   import type { Record } from "pocketbase";
   import { onMount } from "svelte";
   import { portal } from "svelte-portal";
@@ -20,8 +33,12 @@
   let imgData: string | undefined;
 
   async function del() {
-    pb.collection("dishes").delete(record.id);
-    goto("/");
+    pb.collection("dishes").update(record!.id, {
+      disabled: !record?.disabled,
+    });
+    if (!record.disabled) {
+      goto("/");
+    }
   }
 
   function edit() {
@@ -29,19 +46,50 @@
     toEdit = record?.clone();
   }
 
-  function calcQuantity() {
+  $: calcQuantity = () => {
     let q = Infinity;
     for (const i of ((ingredients as Record[]) || []).sort(
       (a, b) => b.weight - a.weight
     )) {
-      const disponible =
-        i.expand.ingredient.weight * i.expand.ingredient.quantity;
+      const ing = i.expand.ingredient as Record;
+      const disponible = ing.weight * ing.quantity;
       let posibles = Math.floor(disponible / i.weight);
       if (posibles < q) {
         q = posibles;
       }
     }
     return q == Infinity ? 0 : q;
+  };
+
+  async function cook() {
+    const items = ingredients.map((i) =>
+      pb.collection("inventory_items").create(
+        {
+          ingredient: (i.expand.ingredient as Record).id,
+          quantity: Math.floor(
+            i.weight / (i.expand.ingredient as Record).weight
+          ),
+          type: "exit",
+        },
+        { $autoCancel: false }
+      )
+    );
+    const updates = ingredients.map((i) =>
+      pb.collection("ingredients").update(
+        (i.expand.ingredient as Record).id,
+        {
+          quantity: Math.max(
+            0,
+            Math.floor(
+              (i.expand.ingredient as Record).quantity -
+                i.weight / (i.expand.ingredient as Record).weight
+            )
+          ),
+        },
+        { $autoCancel: false }
+      )
+    );
+    await Promise.all(items);
   }
 
   $: save = async () => {
@@ -66,6 +114,7 @@
   onMount(async () => {
     setData();
     pb.collection("dishes").subscribe("*", setData);
+    pb.collection("inventory_items").subscribe("*", setData);
   });
 
   async function setData() {
@@ -117,10 +166,11 @@
   }
   async function add() {
     if (!selected?.trim()) return;
+    const ing = await pb.collection("ingredients").getOne(selected);
     const added = await pb
       .collection("dishes_ingredients")
       .create(
-        { ingredient: selected, weight: quantity },
+        { ingredient: selected, weight: quantity * ing.weight },
         { expand: "ingredient" }
       );
     ingredients = [...ingredients, added];
@@ -193,7 +243,7 @@
   }}
 />
 
-{#if notFound || record?.disabled}
+{#if notFound || (record?.disabled && pb.authStore.model?.role == "sala")}
   <div
     class="flex w-full flex-grow flex-col items-center justify-center space-y-4"
   >
@@ -226,6 +276,7 @@
       {:else}
         <h1 class="font-bold text-3xl cursor-default">
           {record.name}
+          {record.disabled ? "(Deshabilitado)" : ""}
         </h1>
       {/if}
       {#if toEdit}
@@ -278,7 +329,7 @@
             >
           </IconButton>
         </div>
-      {:else if pb.authStore.model?.role == "chef"}
+      {:else if ["chef", "admin"].includes(pb.authStore.model?.role)}
         <div class="flex space-x-4">
           <IconButton on:click={edit}>
             <svg
@@ -293,16 +344,20 @@
             >
           </IconButton>
           <IconButton on:click={del}>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="1em"
-              height="1em"
-              viewBox="0 0 12 12"
-              ><path
-                fill="currentColor"
-                d="M5 3h2a1 1 0 0 0-2 0ZM4 3a2 2 0 1 1 4 0h2.5a.5.5 0 0 1 0 1h-.441l-.443 5.17A2 2 0 0 1 7.623 11H4.377a2 2 0 0 1-1.993-1.83L1.941 4H1.5a.5.5 0 0 1 0-1H4Zm3.5 3a.5.5 0 0 0-1 0v2a.5.5 0 0 0 1 0V6ZM5 5.5a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5ZM3.38 9.085a1 1 0 0 0 .997.915h3.246a1 1 0 0 0 .996-.915L9.055 4h-6.11l.436 5.085Z"
-              /></svg
-            >
+            {#if record.disabled}
+              <Checkmark />
+            {:else}
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="1em"
+                height="1em"
+                viewBox="0 0 12 12"
+                ><path
+                  fill="currentColor"
+                  d="M5 3h2a1 1 0 0 0-2 0ZM4 3a2 2 0 1 1 4 0h2.5a.5.5 0 0 1 0 1h-.441l-.443 5.17A2 2 0 0 1 7.623 11H4.377a2 2 0 0 1-1.993-1.83L1.941 4H1.5a.5.5 0 0 1 0-1H4Zm3.5 3a.5.5 0 0 0-1 0v2a.5.5 0 0 0 1 0V6ZM5 5.5a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5ZM3.38 9.085a1 1 0 0 0 .997.915h3.246a1 1 0 0 0 .996-.915L9.055 4h-6.11l.436 5.085Z"
+                /></svg
+              >
+            {/if}
           </IconButton>
         </div>
       {/if}
@@ -349,6 +404,7 @@
         {:else}
           <h1 class="font-bold text-3xl cursor-default">
             {record.name}
+            {record.disabled ? "(Deshabilitado)" : ""}
           </h1>
         {/if}
         {#if toEdit}
@@ -385,7 +441,7 @@
               >
             </IconButton>
           </div>
-        {:else if pb.authStore.model?.role == "chef"}
+        {:else if ["chef", "admin"].includes(pb.authStore.model?.role)}
           <div class="flex space-x-4">
             <IconButton on:click={edit}>
               <svg
@@ -400,16 +456,20 @@
               >
             </IconButton>
             <IconButton on:click={del}>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="1em"
-                height="1em"
-                viewBox="0 0 12 12"
-                ><path
-                  fill="currentColor"
-                  d="M5 3h2a1 1 0 0 0-2 0ZM4 3a2 2 0 1 1 4 0h2.5a.5.5 0 0 1 0 1h-.441l-.443 5.17A2 2 0 0 1 7.623 11H4.377a2 2 0 0 1-1.993-1.83L1.941 4H1.5a.5.5 0 0 1 0-1H4Zm3.5 3a.5.5 0 0 0-1 0v2a.5.5 0 0 0 1 0V6ZM5 5.5a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5ZM3.38 9.085a1 1 0 0 0 .997.915h3.246a1 1 0 0 0 .996-.915L9.055 4h-6.11l.436 5.085Z"
-                /></svg
-              >
+              {#if record.disabled}
+                <Reset />
+              {:else}
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="1em"
+                  height="1em"
+                  viewBox="0 0 12 12"
+                  ><path
+                    fill="currentColor"
+                    d="M5 3h2a1 1 0 0 0-2 0ZM4 3a2 2 0 1 1 4 0h2.5a.5.5 0 0 1 0 1h-.441l-.443 5.17A2 2 0 0 1 7.623 11H4.377a2 2 0 0 1-1.993-1.83L1.941 4H1.5a.5.5 0 0 1 0-1H4Zm3.5 3a.5.5 0 0 0-1 0v2a.5.5 0 0 0 1 0V6ZM5 5.5a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5ZM3.38 9.085a1 1 0 0 0 .997.915h3.246a1 1 0 0 0 .996-.915L9.055 4h-6.11l.436 5.085Z"
+                  /></svg
+                >
+              {/if}
             </IconButton>
           </div>
         {/if}
@@ -420,9 +480,14 @@
     class="flex overflow-auto flex-grow h-0 rounded-lg p-4 mt-4 select-none space-x-4"
   >
     <div class="flex flex-col space-y-2 !cursor-normal text-block w-1/2">
-      <p class="text-lg font-bold pb-7">
-        Platillos disponibles: {calcQuantity()}
-      </p>
+      {#if !toEdit && !record.disabled}
+        <p class="text-sm font-bold">
+          Platillos disponibles: {calcQuantity()}
+        </p>
+        {#if calcQuantity() != 0}
+          <Button variant="accent" on:click={cook}>Ordenar platillo</Button>
+        {/if}
+      {/if}
       <h2 class="text-xl font-bold pointer-events-none">Descripción</h2>
       {#if toEdit}
         <div class="pt-1.1">

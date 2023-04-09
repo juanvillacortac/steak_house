@@ -1,17 +1,16 @@
 <script lang="ts">
   import { tooltip } from "$lib/components/tooltip";
+  import { writeText } from "@tauri-apps/api/clipboard";
   import { onMount, tick } from "svelte";
   import {
     ChevronSort,
     ChevronUp,
     ChevronRight,
     ChevronDown,
-    Calendar,
     ChevronLeft,
     Edit,
     Close,
-    TrashCan,
-    Checkmark,
+    Copy,
   } from "carbon-icons-svelte";
   import { browser } from "$app/environment";
   import Submenu from "$lib/components/Submenu.svelte";
@@ -20,8 +19,8 @@
   import Ufo from "$lib/components/__Ufo.svelte";
   import { clamp } from "$lib/utils/math";
   import { pb } from "$lib/pocketbase";
-  import type { ListResult, Record, Record as _Record } from "pocketbase";
-  import { ComboBox, IconButton, NumberBox, TextBox } from "fluent-svelte";
+  import type { ListResult, Record as _Record } from "pocketbase";
+  import { ComboBox, IconButton, TextBox, TextBoxButton } from "fluent-svelte";
   import { portal } from "svelte-portal";
 
   export let data: ListResult<_Record> | undefined = undefined;
@@ -117,11 +116,37 @@
     };
   }
 
-  async function save() {
+  let password = "";
+  let passwordConfirm = "";
+  $: if (crud) {
+    genPassword();
+  }
+  function genPassword() {
     if (toEdit.id) {
-      await pb.collection("users").update(toEdit.id, toEdit);
+      password = "";
+      passwordConfirm = "";
+      return;
+    }
+    password = crypto.randomUUID().split("-").slice(0, 2).join("");
+    passwordConfirm = password;
+    writeText(password);
+  }
+
+  async function save() {
+    if (!toEdit.name?.trim() || !toEdit.email?.trim()) return;
+    if (toEdit.id) {
+      await pb.collection("users").update(toEdit.id, {
+        ...toEdit,
+        password: password || null,
+        passwordConfirm: passwordConfirm || null,
+      });
     } else {
-      await pb.collection("users").create(toEdit);
+      await pb.collection("users").create({
+        ...toEdit,
+        password,
+        passwordConfirm: password,
+        emailVisibility: true,
+      });
     }
     cancelCrud();
   }
@@ -143,7 +168,7 @@
       on:click={cancelCrud}
     />
     <form
-      class="bg-white rounded-xl flex flex-col space-y-4 shadow max-h-9/10 p-4 relative w-full sm:w-4/10 dark:bg-dark-800 overflow-y-auto overflow-x-hidden"
+      class="bg-white rounded-xl flex flex-col space-y-4 shadow max-h-9/10 p-4 relative w-9/10 lg:w-4/10 dark:bg-dark-800 overflow-y-auto overflow-x-hidden"
       style="will-change: transform"
       on:submit|preventDefault|stopPropagation={save}
       transition:fly={{ y: 10, duration: 400, easing: expoOut }}
@@ -159,7 +184,7 @@
         <IconButton type="button" on:click={cancelCrud}><Close /></IconButton>
       </div>
       <div class="flex flex-col space-y-2">
-        <p class="font-bold text-sm">Nombre</p>
+        <p class="font-bold text-sm">Nombre *</p>
         <TextBox
           required
           class="w-full"
@@ -168,7 +193,7 @@
         />
       </div>
       <div class="flex flex-col space-y-2">
-        <p class="font-bold text-sm">Correo</p>
+        <p class="font-bold text-sm">Correo *</p>
         <TextBox
           required
           class="w-full"
@@ -177,7 +202,7 @@
         />
       </div>
       <div class="flex flex-col space-y-2">
-        <p class="font-bold text-sm">Rol</p>
+        <p class="font-bold text-sm">Rol *</p>
         <ComboBox
           items={[
             { name: "Administrador", value: "admin" },
@@ -188,6 +213,36 @@
           bind:value={toEdit.role}
         />
       </div>
+      {#if !toEdit.id}
+        <div class="flex flex-col space-y-2">
+          <p class="font-bold text-sm">Contraseña inicial</p>
+          <TextBox class="w-full" value={password} disabled>
+            <div slot="buttons" class="text-box-buttons pr-2">
+              <TextBoxButton
+                aria-label="Copiar"
+                on:click={() => {
+                  writeText(password);
+                }}
+              >
+                <Copy width="14" height="14" />
+              </TextBoxButton>
+            </div>
+          </TextBox>
+        </div>
+      {:else}
+        <div class="flex flex-col space-y-2">
+          <p class="font-bold text-sm">Contraseña</p>
+          <TextBox class="w-full" type="password" bind:value={password} />
+        </div>
+        <div class="flex flex-col space-y-2">
+          <p class="font-bold text-sm">Confirmación de contraseña</p>
+          <TextBox
+            class="w-full"
+            type="password"
+            bind:value={passwordConfirm}
+          />
+        </div>
+      {/if}
       <div class="flex space-x-2 items-center justify-end">
         {#if toEdit.id}
           <button
@@ -199,7 +254,10 @@
         {/if}
         <button
           class="rounded font-bold ml-auto border-2 border-blue-500 text-xs py-1 px-2 text-blue-500 duration-200 disabled:cursor-not-allowed disabled:opacity-50 not-disabled:hover:bg-blue-500 not-disabled:hover:text-white"
-          >Guardar</button
+          disabled={!toEdit.name?.trim() ||
+            !toEdit.email?.trim() ||
+            !toEdit.role?.trim() ||
+            password != passwordConfirm}>Guardar</button
         >
       </div>
     </form>

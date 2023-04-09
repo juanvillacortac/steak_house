@@ -327,7 +327,7 @@
                   <div class="flex w-6ch">
                     <!-- svelte-ignore a11y-click-events-have-key-events -->
                     <button
-                      class="rounded cursor-pointer font-normal bg-gray-100 text-xs p-1 transform whitespace-nowrap overflow-ellipsis overflow-hidden dark:bg-dark-100 hover:overflow-visible "
+                      class="rounded cursor-pointer font-normal bg-gray-100 text-xs p-1 transform whitespace-nowrap overflow-ellipsis overflow-hidden dark:bg-dark-100 hover:overflow-visible"
                       title="Copiar al portapapeles"
                       on:click={() => navigator.clipboard.writeText(c.id)}
                       use:tooltip
@@ -365,7 +365,7 @@
                       class:text-red-500={c.type == "exit"}
                       class:text-green-500={c.type == "entry"}
                     >
-                      {c.type == "exit" ? "Salido" : "Entrada"}
+                      {c.type == "exit" ? "Salida" : "Entrada"}
                     </p>
                   </div>
                 </td>

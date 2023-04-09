@@ -1,15 +1,6 @@
 package server
 
 import (
-	// "log"
-	// "net"
-	// "time"
-	//
-	// "steak_house/go/db"
-	// "steak_house/go/jwt"
-	// "steak_house/go/service"
-	//
-	// "google.golang.org/grpc"
 	"log"
 	"strings"
 
@@ -47,7 +38,7 @@ func StartServer(autoStart bool, disableAdmin bool) {
 	})
 
 	if autoStart {
-		app.RootCmd.SetArgs([]string{"serve"})
+		app.RootCmd.SetArgs([]string{"serve", "--http", "127.0.0.1:9080"})
 	}
 
 	if err := app.Start(); err != nil {

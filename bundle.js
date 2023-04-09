@@ -17,10 +17,10 @@ async function main() {
     fs.mkdirSync(dir);
   }
   console.log(
-    `Moving "server${extension}" to "${dir}/server-${targetTriple}${extension}"`
+    `Moving "serve${extension}" to "${dir}/server-${targetTriple}${extension}"`
   );
   fs.renameSync(
-    `server${extension}`,
+    `serve${extension}`,
     `${dir}/server-${targetTriple}${extension}`
   );
 }

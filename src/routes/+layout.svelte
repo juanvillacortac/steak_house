@@ -3,7 +3,7 @@
   import "fluent-svelte/theme.css";
   import "$lib/app.css";
   import Header from "$lib/components/Header.svelte";
-  import { routesMap } from "./routes";
+  import { routesMap } from "$lib/routes";
   import { ListItem } from "fluent-svelte";
   import { page } from "$app/stores";
   import { fly } from "svelte/transition";
@@ -36,7 +36,7 @@
       <slot />
     </div>
   {:else}
-    <div class="flex flex-grow w-full p-2 space-x-2 h-full relative">
+    <div class="flex flex-grow w-full p-2 h-full relative">
       {#if chat}
         <div
           class="absolute bottom-24 right-6 z-60"
@@ -53,7 +53,7 @@
           <ChatBot width="24" height="24" />
         </button>
       {/if}
-      <div class="flex sm:w-1/8 flex-col flex-grow justify-between">
+      <div class="flex sm:w-1/8 flex-col flex-grow justify-between pr-2">
         <div class="flex flex-col space-y-2">
           <img
             src="/logo.png"
@@ -64,14 +64,21 @@
             {#each routesMap as r}
               {#if !r.roles?.length || r.roles.includes(pb.authStore.model?.role)}
                 <ListItem
-                  selected={r.path == "/"
+                  selected={r.segment
+                    ? $page.url.pathname.startsWith(r.segment || "") ||
+                      $page.data.segment?.startsWith(r.segment || "")
+                    : r.path == "/"
                     ? $page.url.pathname == r.path
                     : $page.url.pathname.startsWith(r.path || "")}
                   href={r.path}
                   class="!cursor-pointer"
                 >
                   <svelte:fragment slot="icon">
-                    {@html r.icon || ""}
+                    {#if typeof r.icon == "string" || !r.icon}
+                      {@html r.icon || ""}
+                    {:else}
+                      <svelte:component this={r.icon} />
+                    {/if}
                   </svelte:fragment>
                   <span class="<sm:hidden">{r.name}</span>
                 </ListItem>
