@@ -1,7 +1,9 @@
 package server
 
 import (
+	"fmt"
 	"log"
+	"os"
 	"strings"
 
 	"github.com/labstack/echo/v5"
@@ -23,7 +25,11 @@ func disableAdminMiddleware() echo.MiddlewareFunc {
 }
 
 func StartServer(autoStart bool, disableAdmin bool) {
-	app := pocketbase.New()
+	homeDir, _ := os.UserHomeDir()
+	path := fmt.Sprintf("%s/.steakhouse", homeDir)
+	app := pocketbase.NewWithConfig(&pocketbase.Config{
+		DefaultDataDir: path,
+	})
 
 	if disableAdmin {
 		app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
