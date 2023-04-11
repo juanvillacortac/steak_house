@@ -1,4 +1,4 @@
-import { ChartBar } from "carbon-icons-svelte";
+import ChartBar from "carbon-icons-svelte/lib/ChartBar.svelte";
 import type { SvelteComponent } from "svelte";
 
 export type RouteMap = {

@@ -166,11 +166,10 @@
   }
   async function add() {
     if (!selected?.trim()) return;
-    const ing = await pb.collection("ingredients").getOne(selected);
     const added = await pb
       .collection("dishes_ingredients")
       .create(
-        { ingredient: selected, weight: quantity * ing.weight },
+        { ingredient: selected, weight: quantity },
         { expand: "ingredient" }
       );
     ingredients = [...ingredients, added];

@@ -42,6 +42,8 @@
 		"@tiptap/starter-kit": "2.0.0-beta.220",
 		"@tiptap/suggestion": "2.0.0-beta.220",
 		"carbon-icons-svelte": "^11.4.0",
+		"carbon-preprocess-svelte": "^0.9.1",
+		"date-picker-svelte": "^2.3.0",
 		"pocketbase": "^0.13.1",
 		"svelte-portal": "^2.2.0"
 	}

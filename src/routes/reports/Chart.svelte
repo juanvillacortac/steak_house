@@ -13,21 +13,6 @@
   let y1 = +Infinity;
   let y2 = -Infinity;
 
-  const monthNames = [
-    "Enero",
-    "Febrero",
-    "Marzo",
-    "Abril",
-    "Mayo",
-    "Junio",
-    "Julio",
-    "Agosto",
-    "Septiembre",
-    "Octubre",
-    "Noviembre",
-    "Diciembre",
-  ];
-
   let reports: { date: Date; value: number }[] | undefined;
   export let type: "entry" | "exit";
 
@@ -36,13 +21,22 @@
   });
 
   async function initData() {
-    const actualMonth = new Date().getMonth();
+    const month = new Date().getMonth();
+    const actualDay = new Date().getDate();
     const year = new Date().getFullYear();
     const data = await Promise.all(
-      Array.from({ length: 6 }).map((_, offset) => {
-        const month = actualMonth - offset;
-        const firstDay = new Date(year, month, 1).toISOString();
-        const lastDay = new Date(year, month + 1, 0).toISOString();
+      Array.from({ length: 7 }).map((_, offset) => {
+        const day = actualDay - offset - 1;
+        const firstDay = new Date(year, month, day, 0, 0, 0, 0).toISOString();
+        const lastDay = new Date(
+          year,
+          month,
+          day,
+          23,
+          59,
+          59,
+          999
+        ).toISOString();
         return pb.collection("inventory_items").getFullList({
           $autoCancel: false,
           filter: `created >= "${firstDay}" && created <= "${lastDay}" && type = "${type}"`,
@@ -51,7 +45,7 @@
     );
     reports = data
       .map((value, offset) => {
-        const date = new Date(year, actualMonth - offset);
+        const date = new Date(year, month, actualDay - offset);
         return {
           date,
           value: value.length,
@@ -78,14 +72,14 @@
 
 <div class="chart">
   <Chart {x1} {x2} {y1} {y2}>
-    <Grid horizontal count={5} let:value>
+    <Grid horizontal count={6} let:value>
       <div class="grid-line horizontal"><span>{value}</span></div>
     </Grid>
 
-    <Grid vertical count={6} ticks={points.map((p) => p.x)} let:value>
+    <Grid vertical count={7} ticks={points.map((p) => p.x)} let:value>
       {@const date = new Date(value)}
       <span class="x-label <sm:hidden !print:inline"
-        >{monthNames[date.getMonth()]}</span
+        >{date.toLocaleDateString()}</span
       >
     </Grid>
 
@@ -113,10 +107,7 @@
           style="transform: translate(-{100 *
             ((closest.x - x1) / (x2 - x1))}%,0)"
         >
-          <strong
-            >{monthNames[closest.date.getMonth()]}
-            {closest.date.getFullYear()}</strong
-          >
+          <strong>{closest.date.toLocaleDateString()} </strong>
           <span>{closest.y} {type == "exit" ? "salidas" : "entradas"}</span>
         </div>
       </Point>

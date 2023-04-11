@@ -75,7 +75,7 @@
     <div class="flex-col flex mx-auto space-y-4 w-full">
       <div class="flex space-x-4 items-center">
         <h3 class="font-bold font-title text-black text-2xl dark:text-white">
-          Salidas de inventario en los últimos 6 meses
+          Salidas de inventario en la última semana
         </h3>
       </div>
       <div class="w-7/10 mx-auto">
@@ -85,7 +85,7 @@
     <div class="flex-col flex mx-auto space-y-4 w-full">
       <div class="flex space-x-4 items-center">
         <h3 class="font-bold font-title text-black text-2xl dark:text-white">
-          Entradas de inventario en los últimos 6 meses
+          Entradas de inventario en la última semana
         </h3>
       </div>
       <div class="w-7/10 mx-auto">

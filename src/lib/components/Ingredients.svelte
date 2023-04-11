@@ -13,13 +13,13 @@
     TrashCan,
     Checkmark,
   } from "carbon-icons-svelte";
+  import { DatePicker } from "date-picker-svelte";
   import { browser } from "$app/environment";
   import Submenu from "$lib/components/Submenu.svelte";
   import { fade, fly } from "svelte/transition";
   import { expoOut } from "svelte/easing";
   import Ufo from "$lib/components/__Ufo.svelte";
   import { clamp } from "$lib/utils/math";
-  import { page } from "$app/stores";
   import { pb } from "$lib/pocketbase";
   import type { ListResult, Record as _Record } from "pocketbase";
   import { ComboBox, IconButton, NumberBox, TextBox } from "fluent-svelte";
@@ -90,15 +90,21 @@
 
   export let selectable = false;
 
-  const mediaqueries = {
-    small: "(max-width: 849px)",
-    large: "(min-width: 850px)",
-    short: "(max-height: 399px)",
-    landscape: "(orientation: landscape) and (max-height: 499px)",
-    tiny: "(orientation: portrait) and (max-height: 599px)",
-    dark: "(prefers-color-scheme: dark)",
-    noanimations: "(prefers-reduced-motion: reduce)",
-  };
+  function clickOutside(node: HTMLElement) {
+    const handleClick = (event: any) => {
+      if (node && !node.contains(event.target) && !event.defaultPrevented) {
+        node.dispatchEvent(new CustomEvent("click_outside", node as any));
+      }
+    };
+
+    document.addEventListener("click", handleClick, true);
+
+    return {
+      destroy() {
+        document.removeEventListener("click", handleClick, true);
+      },
+    };
+  }
 
   export let crud = false;
   let toEdit: Record<string, any> = {
@@ -130,6 +136,9 @@
     }
     cancelCrud();
   }
+
+  let showDatePicker = false;
+  let date = new Date();
 
   async function del() {
     await pb.collection("ingredients").delete(toEdit.id);
@@ -218,19 +227,39 @@
             { name: "Seco", value: false },
             { name: "Refrigerado", value: true },
           ]}
-          value={toEdit.cooled}
+          bind:value={toEdit.cooled}
         />
       </div>
       <div class="flex flex-col space-y-2">
         <p class="font-bold text-sm">Fecha de vencimiento</p>
         <div class="flex space-x-4 justify-between w-full items-center">
-          <TextBox
-            class="w-full"
-            value={toEdit.expirationDate
-              ? new Date(toEdit.expirationDate).toLocaleString()
-              : "N/A"}
-            disabled
-          />
+          <div class="relative flex w-full">
+            {#if showDatePicker}
+              <div
+                class="absolute h-0"
+                transition:fly={{ y: "0.3rem", duration: 200 }}
+                use:clickOutside
+                on:click_outside={() => showDatePicker = false}
+              >
+                <div class="transform translate-y-[-100%]">
+                  <DatePicker
+                    bind:value={date}
+                    on:select={() => {
+                      toEdit.expirationDate = date.toISOString();
+                      showDatePicker = false;
+                    }}
+                  />
+                </div>
+              </div>
+            {/if}
+            <TextBox
+              class="w-full"
+              value={toEdit.expirationDate
+                ? new Date(toEdit.expirationDate).toLocaleString()
+                : "N/A"}
+              disabled
+            />
+          </div>
           <div class="relative">
             <input
               type="date"
@@ -242,7 +271,7 @@
               type="button"
               class="relative"
               on:click={() => {
-                document.getElementById("expirationDate")?.click();
+                showDatePicker = true;
               }}
               ><Calendar />
             </IconButton>
@@ -509,6 +538,11 @@
                         on:click={() => {
                           crud = true;
                           toEdit = c.export();
+                          if (toEdit.expirationDate) {
+                            date = new Date(toEdit.expirationDate);
+                          } else {
+                            date = new Date();
+                          }
                         }}
                       >
                         <Edit class="flex" />
